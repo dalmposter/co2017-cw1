@@ -1,0 +1,2 @@
+test "${PWD}" == "${HOME}" && (echo tory")
+test "${PWD}" != "${HOME}" echo "Not in HOME directoy"

@@ -1,0 +1,8 @@
+this line contains the word dc346
+this line is after
+this line ie before
+another line containing dc346
+another line after, but also before
+a third line containing dc346
+a line after the third line containing the safe word
+

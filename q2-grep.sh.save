@@ -1,0 +1,4 @@
+ARGV=("$@")
+arg=0
+echo "number of args: ${#ARGV[@]}"
+echo "arg1: ${$arg}"
