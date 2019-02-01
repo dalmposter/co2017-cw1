@@ -43,6 +43,7 @@ The command I used was:
 	Scenario 2 and 3 were equals because, as discussed above, the ssh command must be highly CPU dependant and not need much else (saw RAM usage of near 0 in top). Therefore once we are running at least 1 copy per core we shouldn't really see much (if any) improvement by running more
 
 * For criteria C I think they were all the same because:
+	The linux scheduler must be good enough to push user facing processes to the front of the queue so they get addressed quickly. I didn't observe any drop in responsiveness or any increase in time taken to run "ls -a /" in any scenario. I don't know how else to explain this so I credit the scheduler and how lightweight interactive processes are
 
 ## "grep" command
 
