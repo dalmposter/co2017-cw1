@@ -1,0 +1,49 @@
+# Q5. Experiment using the linux scheduler and different patterns of concurrency
+
+## "ssh" command
+
+* Scenario 1: no parallelism
+
+The command I used was:
+  /usr/bin/time -o ssh-timing1.txt -v parallel -j1 'ssh-keygen -G /tmp/mods-{}.candidate -b 768' ::: {1..8}
+
+	Turnaround time:	9:09.86 (m:ss)
+	CPU utilisation:	99% (of one core) for a total CPU utilisation of ~25% (4 core machine)
+	Interactivity: 		no noticeable impact on responsiveness (moving windows around, playing with settings)
+		Timed running ls -a / : took 0:00.00 (m:ss)
+
+* Scenario 2: number of processes equal to number of processors
+
+The command I used was:
+  /usr/bin/time -o ssh-timing2.txt -v parallel -j4 'ssh-keygen -G /tmp/mods-{}.candidate -b 768' ::: {1..8}
+
+	Turnaround time:	2:25.84 (m:ss)
+	CPU utilisation:	392% (of one core) for a total CPU utilitisation of ~98% (4 core machine)
+	Interactivity:		no noticeable impact on responsiveness (moving windows around, playing with settings).
+		Timed running ls -a / : took 0:00.00 (m:ss)
+
+* Scenario 3: twice the number of processes as the number of processors
+
+The command I used was:
+  /usr/bin/time -o ssh-timing3.txt -v parallel -j8 'ssh-keygen -G /tmp/mods-{}.candidate -b 768' ::: {1..8}
+
+	Turnaround time:	2:25.27 (m:ss)
+	CPU utilisation: 	393% (of one core) for a total CPU utilisation of ~98% (4 core machine)
+	Interactivity:		no noticeable impact on responsiveness (moving windows around, playing with settings)
+		Timed running ls -a / : took 0:00.00 (m:ss)
+
+### Conclusion
+
+* For criteria A I think Scenario 2 and 3 were about equal, but better than Scenario 1 because:
+	There were very few voluntary context switches (~0.4% of all switches) meaning the command doesn't make use of (m)any resources for which it would need to wait. This means it is likely to be most efficient when running N copies in parallel, where N is the number of cores, and similar results with N being greater.
+	
+
+* For criteria B I think Scenario 2 and 3 were about equal, but better than Scenario 1 because:
+	Scenario 1 was limited to 25% of the available CPU as we forced it to run sequentially.
+	Scenario 2 and 3 were equals because, as discussed above, the ssh command must be highly CPU dependant and not need much else (saw RAM usage of near 0 in top). Therefore once we are running at least 1 copy per core we shouldn't really see much (if any) improvement by running more
+
+* For criteria C I think they were all the same because:
+
+## "grep" command
+
+(Similar format to above)
