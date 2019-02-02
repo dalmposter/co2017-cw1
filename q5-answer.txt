@@ -39,12 +39,54 @@ The command I used was:
 	
 
 * For criteria B I think Scenario 2 and 3 were about equal, but better than Scenario 1 because:
-	Scenario 1 was limited to 25% of the available CPU as we forced it to run sequentially.
-	Scenario 2 and 3 were equals because, as discussed above, the ssh command must be highly CPU dependant and not need much else (saw RAM usage of near 0 in top). Therefore once we are running at least 1 copy per core we shouldn't really see much (if any) improvement by running more
+	Scenario 1 was limited to 25% of the available CPU as we forced it to run sequentially. It did manage to use all of its 1 core but it is clearly disadvantaged against it's full power rivals.
+	Scenario 2 and 3 were equal because, as discussed above, the ssh command must be highly CPU dependant and not need much else (saw RAM usage of near 0 in top). Therefore once we are running at least 1 copy per core we shouldn't really see much (if any) improvement by running more
 
 * For criteria C I think they were all the same because:
 	The linux scheduler must be good enough to push user facing processes to the front of the queue so they get addressed quickly. I didn't observe any drop in responsiveness or any increase in time taken to run "ls -a /" in any scenario. I don't know how else to explain this so I credit the scheduler and how lightweight interactive processes are.
 
 ## "grep" command
 
-(Similar format to above)
+* Scenario 1: no parallelism
+
+The command I used was:
+  /usr/bin/time -o grep-timing1.txt -v parallel -j1 'grep -r $(number -l {}) /usr/share/doc > /tmp/grep{}.txt' ::: {1..8}
+	
+	Turnaround time:	0:58.75 (m:ss)
+	CPU utilisation:	53% (of one core) for a total CPU utilisaion of ~13% (4 core machine)
+	Interactivity:		no noticeable impact on responsiveness (moving windows around, playing with settings)
+		Timed running ls -a / : took 0:00.00 (m:ss)
+
+* Scenario 2: number of processes equal to number of processors
+
+The command I used was:
+  /usr/bin/time -o grep-timing2.txt -v parallel -j4 'grep -r $(number -l {}) /usr/share/doc > /tmp/grep{}.txt' ::: {1..8}
+
+	Turnaround time:	0:05.92 (m:ss)
+	CPU utilisation:	369% (of one core) for a total CPU utilisation of ~92% (4 core machine)
+	Interactivity:		moving windows around was very slightly lagging. Timed running ls -a / : took 0:00.00 (m:ss)
+
+* Scenario 3: twice the number of processes as the number of processors
+
+The command I used was:
+  /usr/bin/time -o grep-timing2.txt -v parallel -j8 'grep -r $(number -l {}) /usr/share/doc > /tmp/grep{}.txt' ::: {1..8}
+
+	Turnaround time: 	0:05.97 (m:ss)
+	CPU utilisation: 	375% (of one core) for a total CPU utilisation of ~94% (4 core machine)
+	Interactivity:		moving windows around lagged ever so slightly. Time running ls -a / : took 0:00.00 (m:ss)
+
+### Conclusion
+
+* For criteria A I think Scenario 2 and 3 were about equal, but better than Scenario 1 because:
+	Scenario 1 was likely bound by the disk, with disk read stats reaching as high as 50MiB/s. This is shown by Scenario 1's CPU usage being much less than 100% of the one core it was given. We can also see in grep-timing1.txt that there were a lot of voluntary context switches (~98% of all switches) meaning the process was often waiting on some other resource. CPU utilisation in scenarios 2 and 3 is similar which means that 1 process per core is the sweet spot, though it seems there isn't any harm in running more.
+
+* For criteria B I think Scenario 2 and 3 were about equal, but better than Scenario 1 because:
+	(detailed above)
+	The CPU utiliation is marginally higher in scenario 3 but this could be within the margin of error. In scenario 2 voluntary switches make up a marginally larger percentage of the total switches (by fractions of a percent), however in both cases these make up <3% of switches. Whereas in scenario 1 voluntary switches make up the majority of all context switches.
+
+* For criteria C I think they were about the same, with scenario 1 possibly being negligibly better because:
+	Again I'm going to have to credit the linux scheduler and how lightweight most interactive tasks are. I imagine we could start seeing a difference in large "interactive" tasks like organising a directory (especially since I expect the disk was seeing a lot of use by grep) but for how much the CPU was being hammered it performed suprisingly well in mundane tasks.
+
+	An interesting side point:
+		My machine stopped running the grep command "honestly" after so many runs. I went back to test disk usage in scenario 1 and I didn't see grep using the disk at all. Additionally the turnaround time reduced by 60%! This returned to normal following a restart. It may have cached any data it was reading from the disk and just used that. I think this started after my initial round of testing so fingers crossed (and having run repeats) this hasn't affected my results.
+	
